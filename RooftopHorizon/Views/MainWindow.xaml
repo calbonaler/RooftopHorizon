@@ -1,0 +1,251 @@
+﻿<Window
+	x:Class="RooftopHorizon.Views.MainWindow"
+	xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+	xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
+	xmlns:ei="http://schemas.microsoft.com/expression/2010/interactions"
+	xmlns:l="http://schemas.livet-mvvm.net/2011/wpf"
+	xmlns:v="clr-namespace:RooftopHorizon.Views"
+	xmlns:vm="clr-namespace:RooftopHorizon.ViewModels"
+	xmlns:saruna="clr-namespace:Saruna;assembly=Saruna"
+	xmlns:saruna_streams="clr-namespace:Saruna.Streams;assembly=Saruna"
+	xmlns:controls="clr-namespace:Controls;assembly=SyntaxHighlightingTextBox"
+	xmlns:controls_wpf="clr-namespace:Controls.Wpf;assembly=SyntaxHighlightingTextBox"
+	UseLayoutRounding="True" SnapsToDevicePixels="True" Title="MainWindow" Height="350" Width="525">
+
+	<Window.DataContext>
+		<vm:MainWindowViewModel />
+	</Window.DataContext>
+
+	<i:Interaction.Triggers>
+		<!--Viewに特別な要件が存在しない限りは、トリガーやアクションの自作にこだわらず積極的にコードビハインドを使いましょう -->
+		<!--Viewのコードビハインドは、基本的にView内で完結するロジックとViewModelからのイベントの受信(専用リスナを使用する)に限るとトラブルが少なくなります -->
+		<!--Livet1.1からはコードビハインドでViewModelのイベントを受信するためのWeakEventLisnterサポートが追加されています -->
+
+		<!--WindowのContentRenderedイベントのタイミングでViewModelのInitializeメソッドが呼ばれます-->
+		<i:EventTrigger EventName="ContentRendered">
+			<l:LivetCallMethodAction MethodTarget="{Binding}" MethodName="Initialize" />
+		</i:EventTrigger>
+
+		<!--Windowが閉じたタイミングでViewModelのDisposeメソッドが呼ばれます-->
+		<i:EventTrigger EventName="Closed">
+			<l:DataContextDisposeAction />
+		</i:EventTrigger>
+
+		<!--WindowのCloseキャンセル処理に対応する場合は、WindowCloseCancelBehaviorの使用を検討してください-->
+
+	</i:Interaction.Triggers>
+	<Window.Resources>
+		<Style TargetType="ListBoxItem">
+			<Setter Property="FocusVisualStyle" Value="{x:Null}" />
+			<Setter Property="Template">
+				<Setter.Value>
+					<ControlTemplate TargetType="ListBoxItem">
+						<Border Name="border" Background="Transparent" Margin="0" CornerRadius="3" BorderThickness="1" Padding="1">
+							<ContentPresenter/>
+						</Border>
+						<ControlTemplate.Triggers>
+							<Trigger Property="IsSelected" Value="True">
+								<Setter TargetName="border" Property="Background">
+									<Setter.Value>
+										<LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
+											<GradientStop Color="#FFEBF4FD" />
+											<GradientStop Offset="1" Color="#FFC1DBFC" />
+										</LinearGradientBrush>
+									</Setter.Value>
+								</Setter>
+								<Setter TargetName="border" Property="BorderBrush" Value="#FF7DA2CE" />
+							</Trigger>
+						</ControlTemplate.Triggers>
+					</ControlTemplate>
+				</Setter.Value>
+			</Setter>
+		</Style>
+		<DataTemplate DataType="{x:Type saruna:User}">
+			<StackPanel Margin="2" Orientation="Horizontal">
+				<Image Source="{Binding ProfileImageUrl, Mode=OneWay}" Width="25" VerticalAlignment="Center" Margin="0,0,5,0" StretchDirection="DownOnly" />
+				<TextBlock VerticalAlignment="Center">
+					<Run FontSize="14" FontWeight="Bold" Text="{Binding Name, Mode=OneWay}" /><Run Text=" @" /><Run Text="{Binding ScreenName, Mode=OneWay}" />
+				</TextBlock>
+			</StackPanel>
+		</DataTemplate>
+		<DataTemplate DataType="{x:Type saruna_streams:EventNotice}">
+			<StackPanel>
+				<TextBlock Text="{Binding Event, Mode=OneWay}" />
+				<ContentControl Content="{Binding Source, Mode=OneWay}" Margin="0,0,0,5" />
+				<ContentControl Content="{Binding TargetObject, Mode=OneWay}" ContentTemplateSelector="{DynamicResource tweetDataTemplateSelector}" />
+			</StackPanel>
+		</DataTemplate>
+		<DataTemplate DataType="{x:Type saruna_streams:TweetDeletionNotice}">
+			<StackPanel>
+				<TextBlock Text="TweetDeletion" />
+				<ContentControl Content="{Binding Tweet, Mode=OneWay}" ContentTemplateSelector="{DynamicResource tweetDataTemplateSelector}" />
+			</StackPanel>
+		</DataTemplate>
+	</Window.Resources>
+	<DockPanel>
+		<i:Interaction.Triggers>
+			<l:InteractionMessageTrigger Messenger="{Binding Messenger}" MessageKey="ShowErrorMessage">
+				<v:ShowMessageAction />
+			</l:InteractionMessageTrigger>
+		</i:Interaction.Triggers>
+		<ToolBar DockPanel.Dock="Top">
+			<Button Content="Tweet" Command="{Binding TweetCommand}" />
+			<Button Content="Select Media" Command="{Binding SelectUploadingMediaCommand}" />
+			<ToggleButton Content="UserStream" IsChecked="{Binding IsUserStreamConnected}" />
+			<Separator />
+			<Button Content="Sign in with Twitter" Command="{Binding SignInWithTwitterCommand}" />
+		</ToolBar>
+		<StackPanel DockPanel.Dock="Top">
+			<controls_wpf:SyntaxHighlightingTextBox Text="{Binding Tweeting.Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" MaxLength="140" TextWrapping="Wrap" AcceptsReturn="True">
+				<controls_wpf:SyntaxHighlightingTextBox.HighlightTokenizer>
+					<vm:TweetHighlightTokenizer>
+						<controls:WordHighlightDescriptor ForeColor="Blue" Words="sel, fav, unfav, rt, re, count, where, on, and, or, not, by, via, contains, matches, home, mentions, user" />
+						<controls:EscapedRangeHighlightDescriptor ForeColor="#A31515" BoundaryCharacter="&quot;" EscapeCharacter="\" />
+					</vm:TweetHighlightTokenizer>
+				</controls_wpf:SyntaxHighlightingTextBox.HighlightTokenizer>
+				<i:Interaction.Behaviors>
+					<l:TextBoxBindingSupportBehavior SelectionStart="{Binding TweetSelectedIndex}" />
+				</i:Interaction.Behaviors>
+				<i:Interaction.Triggers>
+					<v:ControlEnterKeyDownEventTrigger>
+						<i:InvokeCommandAction Command="{Binding TweetCommand}" />
+					</v:ControlEnterKeyDownEventTrigger>
+				</i:Interaction.Triggers>
+			</controls_wpf:SyntaxHighlightingTextBox>
+			<Image Source="{Binding UploadingMedia}" MaxHeight="200"/>
+		</StackPanel>
+		<Grid>
+			<Grid.ColumnDefinitions>
+				<ColumnDefinition />
+				<ColumnDefinition Width="Auto" />
+				<ColumnDefinition />
+			</Grid.ColumnDefinitions>
+			<Grid.Resources>
+				<v:TweetDataTemplateSelector x:Key="tweetDataTemplateSelector" />
+				<DataTemplate x:Key="TweetDataTemplate" DataType="saruna:Tweet">
+					<Grid Margin="2">
+						<Grid.ColumnDefinitions>
+							<ColumnDefinition Width="Auto" />
+							<ColumnDefinition />
+							<ColumnDefinition Width="Auto" />
+						</Grid.ColumnDefinitions>
+						<Grid.RowDefinitions>
+							<RowDefinition Height="Auto" />
+							<RowDefinition />
+							<RowDefinition Height="Auto" />
+							<RowDefinition Height="Auto" />
+						</Grid.RowDefinitions>
+						<Image Grid.RowSpan="2" Source="{Binding User.ProfileImageUrl}" VerticalAlignment="Top" Width="40" Margin="0,0,5,0" />
+						<TextBlock Grid.Column="1"><Run Text="{Binding User.Name, Mode=OneWay}" FontWeight="Bold" /> @<Run Text="{Binding User.ScreenName, Mode=OneWay}" /></TextBlock>
+						<TextBlock Grid.Column="2" HorizontalAlignment="Right" Text="{Binding CreatedTime}" />
+						<v:TweetTextBlock Grid.Column="1" Grid.Row="1" Grid.ColumnSpan="2" Tweet="{Binding}" TextWrapping="WrapWithOverflow" />
+						<TextBlock Grid.Column="1" Grid.Row="2" VerticalAlignment="Center">via <v:NavigableHyperlink NavigateUri="{Binding Source.Attributes[href].Value}"><Run Text="{Binding Source.InnerText, Mode=OneWay}" /></v:NavigableHyperlink></TextBlock>
+						<StackPanel Grid.Column="1" Grid.ColumnSpan="2" Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
+							<ToggleButton Content="Favorite" Style="{DynamicResource FlatToggleButtonStyle}" Focusable="False" IsChecked="{Binding HasCurrentUserFavorited}" VerticalAlignment="Center">
+								<i:Interaction.Triggers>
+									<i:EventTrigger EventName="Checked">
+										<l:LivetCallMethodAction MethodTarget="{Binding DataContext, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Window}}}" MethodParameter="{Binding}" MethodName="Favorite" />
+									</i:EventTrigger>
+								</i:Interaction.Triggers>
+							</ToggleButton>
+							<Button Content="Reply" Style="{DynamicResource FlatButtonStyle}" Focusable="False" VerticalAlignment="Center">
+								<i:Interaction.Triggers>
+									<i:EventTrigger EventName="Click">
+										<l:LivetCallMethodAction MethodTarget="{Binding DataContext, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Window}}}" MethodParameter="{Binding}" MethodName="SetInReplyTo" />
+									</i:EventTrigger>
+								</i:Interaction.Triggers>
+							</Button>
+							<Button Content="Retweet" Style="{DynamicResource FlatButtonStyle}" Focusable="False" VerticalAlignment="Center">
+								<i:Interaction.Triggers>
+									<i:EventTrigger EventName="Click">
+										<l:LivetCallMethodAction MethodTarget="{Binding DataContext, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Window}}}" MethodParameter="{Binding}" MethodName="Retweet" />
+									</i:EventTrigger>
+								</i:Interaction.Triggers>
+							</Button>
+							<Button Content="Quote" Style="{DynamicResource FlatButtonStyle}" Focusable="False" VerticalAlignment="Center">
+								<i:Interaction.Triggers>
+									<i:EventTrigger EventName="Click">
+										<l:LivetCallMethodAction MethodTarget="{Binding DataContext, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Window}}}" MethodParameter="{Binding}" MethodName="Quote" />
+									</i:EventTrigger>
+								</i:Interaction.Triggers>
+							</Button>
+						</StackPanel>
+						<Expander x:Name="replyExpander" Grid.Row="3" Grid.ColumnSpan="3" Header="Replies">
+							<ContentControl Content="{Binding InReplyToTweet}" ContentTemplateSelector="{DynamicResource tweetDataTemplateSelector}">
+								<ContentControl.LayoutTransform>
+									<ScaleTransform ScaleX="0.9" ScaleY="0.9" />
+								</ContentControl.LayoutTransform>
+							</ContentControl>
+							<i:Interaction.Triggers>
+								<i:EventTrigger EventName="Expanded">
+									<l:LivetCallMethodAction MethodTarget="{Binding DataContext, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Window}}}" MethodParameter="{Binding}" MethodName="GetReply" />
+								</i:EventTrigger>
+							</i:Interaction.Triggers>
+						</Expander>
+					</Grid>
+					<DataTemplate.Triggers>
+						<DataTrigger Binding="{Binding InReplyToTweetId}" Value="{x:Null}">
+							<Setter TargetName="replyExpander" Property="Visibility" Value="Collapsed" />
+						</DataTrigger>
+					</DataTemplate.Triggers>
+				</DataTemplate>
+				<DataTemplate x:Key="RetweetDataTemplate" DataType="saruna:Tweet">
+					<Grid Margin="0">
+						<ContentControl Content="{Binding RetweetSource}" ContentTemplate="{DynamicResource TweetDataTemplate}" />
+						<Image Source="{Binding User.ProfileImageUrl}" Width="24" Margin="2,42,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" StretchDirection="DownOnly" />
+					</Grid>
+				</DataTemplate>
+				<DataTemplate x:Key="DirectMessageTemplate"  DataType="saruna:DirectMessage">
+					<Grid Margin="2">
+						<Grid.ColumnDefinitions>
+							<ColumnDefinition Width="Auto" />
+							<ColumnDefinition />
+							<ColumnDefinition Width="Auto" />
+						</Grid.ColumnDefinitions>
+						<Grid.RowDefinitions>
+							<RowDefinition Height="Auto" />
+							<RowDefinition />
+						</Grid.RowDefinitions>
+						<Image Grid.RowSpan="2" Source="{Binding Sender.ProfileImageUrl}" VerticalAlignment="Top" Width="40" Margin="0,0,5,0" />
+						<TextBlock Grid.Column="1"><Run Text="{Binding Sender.Name, Mode=OneWay}" FontWeight="Bold" /> @<Run Text="{Binding Sender.ScreenName, Mode=OneWay}" /></TextBlock>
+						<TextBlock Grid.Column="2" HorizontalAlignment="Right" Text="{Binding CreatedTime}" />
+						<TextBlock Grid.Column="1" Grid.Row="1" Grid.ColumnSpan="2" TextWrapping="Wrap">@<Run Text="{Binding Recipient.ScreenName, Mode=OneWay}"/> <Run Text="{Binding Text}"/></TextBlock>
+					</Grid>
+				</DataTemplate>
+			</Grid.Resources>
+			<ListBox Grid.Column="2" DockPanel.Dock="Right" ItemsSource="{Binding StreamNotices}" ScrollViewer.HorizontalScrollBarVisibility="Disabled" />
+			<GridSplitter Grid.Column="1" Width="3" HorizontalAlignment="Center" VerticalAlignment="Stretch"/>
+			<TabControl Grid.Column="0">
+				<TabItem>
+					<TabItem.Header>
+						<StackPanel Orientation="Horizontal">
+							<Image Source="{Binding AuthenticatingUser.ProfileImageUrl}" Width="30" />
+							<TextBlock Text="{Binding AuthenticatingUser.ScreenName}" VerticalAlignment="Center"/>
+						</StackPanel>
+					</TabItem.Header>
+					<TabControl SelectedIndex="{Binding SelectedTimelineIndex}">
+						<TabItem Header="Home">
+							<DockPanel>
+								<Button Content="Refresh" DockPanel.Dock="Top" Command="{Binding RefreshHomeTimelineCommand}" />
+								<v:AutoScrollListBox ItemsSource="{Binding HomeTimeline}" ItemTemplateSelector="{DynamicResource tweetDataTemplateSelector}" ScrollViewer.HorizontalScrollBarVisibility="Disabled" SelectedIndex="{Binding HomeTimelineSelectedIndex}"/>
+							</DockPanel>
+						</TabItem>
+						<TabItem Header="Mention">
+							<DockPanel>
+								<Button Content="Refresh" DockPanel.Dock="Top" Command="{Binding RefreshMentionsTimelineCommand}" />
+								<v:AutoScrollListBox ItemsSource="{Binding MentionsTimeline}" ItemTemplateSelector="{DynamicResource tweetDataTemplateSelector}" ScrollViewer.HorizontalScrollBarVisibility="Disabled" SelectedIndex="{Binding MentionsTimelineSelectedIndex}"/>
+							</DockPanel>
+						</TabItem>
+						<TabItem Header="DirectMessage">
+							<DockPanel>
+								<Button Content="Refresh" DockPanel.Dock="Top" Command="{Binding RefreshDirectMessageTimelineCommand}"/>
+								<v:AutoScrollListBox ItemsSource="{Binding DirectMessageTimeline}" ItemTemplate="{DynamicResource DirectMessageTemplate}"  ScrollViewer.HorizontalScrollBarVisibility="Disabled"/>
+							</DockPanel>
+						</TabItem>
+					</TabControl>
+				</TabItem>
+			</TabControl>
+		</Grid>
+	</DockPanel>
+</Window>
