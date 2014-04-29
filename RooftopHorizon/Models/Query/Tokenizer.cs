@@ -1,13 +1,15 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
-namespace RooftopHorizon.Models
+namespace RooftopHorizon.Query
 {
-	public sealed class Tokenizer2 : IDisposable
+	public sealed class Tokenizer : IDisposable
 	{
-		public Tokenizer2(TextReader reader)
+		public Tokenizer(TextReader reader)
 		{
 			m_Reader = reader;
 			Read();

@@ -8,13 +8,13 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Saruna;
 
-namespace RooftopHorizon.Models
+namespace RooftopHorizon.Query
 {
-	public sealed class Parser2 : IDisposable
+	public sealed class Parser : IDisposable
 	{
-		public Parser2(TextReader reader, Model model)
+		public Parser(TextReader reader, Model model)
 		{
-			m_Tokenizer = new Tokenizer2(reader);
+			m_Tokenizer = new Tokenizer(reader);
 			m_Model = model;
 		}
 
@@ -27,10 +27,10 @@ namespace RooftopHorizon.Models
 			}
 		}
 
-		Tokenizer2 m_Tokenizer;
+		Tokenizer m_Tokenizer;
 		Model m_Model;
 
-		T Expect<T>() where T: Token
+		T Expect<T>() where T : Token
 		{
 			if (m_Tokenizer.Next is T)
 				return (T)m_Tokenizer.Read();
@@ -52,7 +52,7 @@ namespace RooftopHorizon.Models
 			throw new ArgumentException(string.Format("トークン {0} が予期されましたがトークン {1} に遭遇しました。", expectedTokenString, m_Tokenizer.Next.StringifiedValue));
 		}
 
-		bool Accept<T>() where T: Token
+		bool Accept<T>() where T : Token
 		{
 			if (m_Tokenizer.Next is T)
 			{
@@ -67,7 +67,7 @@ namespace RooftopHorizon.Models
 			List<Func<Tweet, Task>> commands = null;
 			var command = ParseCommandName();
 			if (command != null)
-				(commands ?? (commands = new List<Func<Tweet,Task>>())).Add(command);
+				(commands ?? (commands = new List<Func<Tweet, Task>>())).Add(command);
 			while (Accept<AndToken>())
 			{
 				command = ParseCommandName();

@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Saruna;
 
-namespace RooftopHorizon.Models
+namespace RooftopHorizon.Query
 {
 	public class Command
 	{

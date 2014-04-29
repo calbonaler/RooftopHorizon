@@ -4,7 +4,6 @@ using System.Windows.Input;
 using System.Linq;
 using Livet;
 using Livet.Commands;
-using RooftopHorizon.Models;
 using Saruna;
 using Livet.EventListeners;
 

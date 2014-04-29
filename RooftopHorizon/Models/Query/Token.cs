@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace RooftopHorizon.Models
+namespace RooftopHorizon.Query
 {
 	public abstract class Token
 	{

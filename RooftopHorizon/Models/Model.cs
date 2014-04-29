@@ -6,9 +6,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Livet;
+using RooftopHorizon.Query;
 using Saruna;
 
-namespace RooftopHorizon.Models
+namespace RooftopHorizon
 {
 	public class Model : NotificationObject
 	{
@@ -186,7 +187,7 @@ namespace RooftopHorizon.Models
 		public async Task RunCommand(string commandLine)
 		{
 			using (StringReader reader = new StringReader(commandLine))
-			using (Parser2 parser = new Parser2(reader, this))
+			using (Parser parser = new Parser(reader, this))
 			{
 				var command = parser.Parse();
 				command.StartTracking();

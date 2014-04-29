@@ -90,11 +90,11 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="Models\Command.cs" />
+    <Compile Include="Models\Query\Command.cs" />
     <Compile Include="Models\Conversation.cs" />
-    <Compile Include="Models\Parser2.cs" />
-    <Compile Include="Models\Token.cs" />
-    <Compile Include="Models\Tokenizer2.cs" />
+    <Compile Include="Models\Query\Parser.cs" />
+    <Compile Include="Models\Query\Token.cs" />
+    <Compile Include="Models\Query\Tokenizer.cs" />
     <Compile Include="ViewModels\TweetHighlightTokenizer.cs" />
     <Compile Include="Views\AutoScrollListBox.cs" />
     <Compile Include="Views\ControlEnterKeyDownEventTrigger.cs" />
