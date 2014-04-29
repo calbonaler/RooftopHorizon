@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
@@ -15,13 +16,8 @@ namespace Saruna
 		{
 			if (Utils.IsJsonNull(element))
 				return null;
-			WeakReference<Tweet> weakTweet;
 			long id = element.Element("id").Cast<long>();
-			Tweet res;
-			if (cache.TryGetValue(id, out weakTweet) && !weakTweet.TryGetTarget(out res))
-				weakTweet.SetTarget(res = new Tweet());
-			else
-				cache[id] = new WeakReference<Tweet>(res = new Tweet());
+			var res = cache.GetOrAdd(id, key => new MiddleReference<Tweet>(new Tweet())).GetOrSetTarget(() => new Tweet());
 			res.Id = id;
 			res.CreatedTime = DateTime.ParseExact(element.Element("created_at").Cast<string>(), "ddd MMM dd HH:mm:ss K yyyy", CultureInfo.InvariantCulture.DateTimeFormat);
 			res.Source = HtmlNode.CreateNode(element.Element("source").Cast<string>());
@@ -89,18 +85,18 @@ namespace Saruna
 			return res;
 		}
 
-		static Dictionary<long, WeakReference<Tweet>> cache = new Dictionary<long, WeakReference<Tweet>>();
+		static ConcurrentDictionary<long, MiddleReference<Tweet>> cache = new ConcurrentDictionary<long, MiddleReference<Tweet>>();
 
 		public static Tweet GetTweetForId(long id)
 		{
-			WeakReference<Tweet> weakTweet;
-			Tweet tweet;
+			MiddleReference<Tweet> weakTweet;
 			if (cache.TryGetValue(id, out weakTweet))
 			{
-				if (weakTweet.TryGetTarget(out tweet))
+				var tweet = weakTweet.GetOrSetTarget(() => null);
+				if (tweet != null)
 					return tweet;
 				else
-					cache.Remove(id);
+					cache.TryRemove(id, out weakTweet);
 			}
 			return null;
 		}

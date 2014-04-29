@@ -46,6 +46,7 @@
     <Compile Include="Identifiers.cs" />
     <Compile Include="Infrastructures\TwitterRequestContent.cs" />
     <Compile Include="IUpdateable.cs" />
+    <Compile Include="MiddleReference.cs" />
     <Compile Include="ProfileBanner.cs" />
     <Compile Include="Rectangle.cs" />
     <Compile Include="SearchTimeline.cs" />
