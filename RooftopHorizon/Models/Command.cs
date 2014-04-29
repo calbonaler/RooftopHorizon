@@ -7,9 +7,9 @@ using Saruna;
 
 namespace RooftopHorizon.Models
 {
-	public abstract class Command
+	public class Command
 	{
-		protected Command(CommandParameter parameter, Model model)
+		public Command(CommandParameter parameter, Model model)
 		{
 			if (parameter.Timeline == TimelineType.Default)
 				parameter.Timeline = model.SelectedTimelineIndex;
@@ -19,23 +19,6 @@ namespace RooftopHorizon.Models
 				Timeline = model.MentionsTimeline;
 			else if (parameter.Timeline == TimelineType.User)
 				Timeline = new TimelineWithSelectedIndex(model.Twitter.GetUserTimeline(Identifiers.CreateUser(parameter.OwnerScreenName)));
-		}
-
-		public TimelineWithSelectedIndex Timeline { get; private set; }
-
-		public PositionTracker Position { get; protected set; }
-		
-		public virtual void StartTracking() { if (Position != null) Timeline.Timeline.AddTracker(Position); }
-
-		public virtual void EndTracking() { if (Position != null) Timeline.Timeline.RemoveTracker(Position); }
-
-		public abstract Task PerformAsync(Model model);
-	}
-
-	public class SelectCommand : Command
-	{
-		public SelectCommand(CommandParameter parameter, Model model) : base(parameter, model)
-		{
 			if (parameter.Position != null)
 			{
 				if (parameter.Relative)
@@ -51,29 +34,23 @@ namespace RooftopHorizon.Models
 			SubCommands = parameter.SubCommands.ToArray();
 		}
 
+		public TimelineWithSelectedIndex Timeline { get; private set; }
+
+		public PositionTracker Position { get; protected set; }
+
 		public TimelineType DestinationTimeline { get; private set; }
 
 		public int Count { get; private set; }
 
 		public Func<Tweet, bool> Predicate { get; private set; }
 
-		public IReadOnlyList<Command> SubCommands { get; private set; }
+		public IReadOnlyList<Func<Tweet, Task>> SubCommands { get; private set; }
+		
+		public virtual void StartTracking() { if (Position != null) Timeline.Timeline.AddTracker(Position); }
 
-		public override void StartTracking()
-		{
-			base.StartTracking();
-			foreach (var command in SubCommands)
-				command.StartTracking();
-		}
+		public virtual void EndTracking() { if (Position != null) Timeline.Timeline.RemoveTracker(Position); }
 
-		public override void EndTracking()
-		{
-			base.EndTracking();
-			foreach (var command in SubCommands)
-				command.EndTracking();
-		}
-
-		public override async Task PerformAsync(Model model)
+		public async Task PerformAsync(Model model)
 		{
 			model.SelectedTimelineIndex = DestinationTimeline;
 			int count = Count;
@@ -87,7 +64,10 @@ namespace RooftopHorizon.Models
 				{
 					Timeline.SelectedIndex = Position.Value + offset;
 					foreach (var command in SubCommands)
-						await command.PerformAsync(model);
+					{
+						try { await command(tweet); }
+						catch (TwitterException) { }
+					}
 				}
 				offset++;
 				count--;
@@ -102,11 +82,14 @@ namespace RooftopHorizon.Models
 						var tweet = Timeline.Timeline[Position.Value + offset];
 						if (tweet.RetweetSource != null)
 							tweet = tweet.RetweetSource;
-						if (Predicate(Timeline.Timeline[Position.Value + offset]))
+						if (Predicate(tweet))
 						{
 							Timeline.SelectedIndex = Position.Value + offset;
 							foreach (var command in SubCommands)
-								await command.PerformAsync(model);
+							{
+								try { await command(tweet); }
+								catch (TwitterException) { }
+							}
 						}
 						offset++;
 						count--;
@@ -117,44 +100,9 @@ namespace RooftopHorizon.Models
 		}
 	}
 
-	public class TweetRelatedCommand : Command
-	{
-		public TweetRelatedCommand(CommandParameter parameter, Model model, Func<Tweet, Task> process) : base(parameter, model)
-		{
-			if (parameter.Position != null)
-			{
-				if (parameter.Relative)
-				{
-					offset = (int)parameter.Position;
-					Position = null;
-				}
-				else
-					Position = new PositionTracker((int)parameter.Position);
-			}
-			else
-				Position = null;
-			m_Process = process;
-		}
-
-		Func<Tweet, Task> m_Process;
-		int offset = 0;
-
-		public override async Task PerformAsync(Model model)
-		{
-			try
-			{
-				if (Position != null)
-					await m_Process(Timeline.Timeline[Position.Value]);
-				else
-					await m_Process(Timeline.Timeline[Timeline.SelectedIndex + offset]);
-			}
-			catch (TwitterException) { }
-		}
-	}
-
 	public class CommandParameter
 	{
-		IList<Command> m_SubCommands = new List<Command>();
+		IList<Func<Tweet, Task>> m_SubCommands = new List<Func<Tweet, Task>>();
 
 		public int? Position { get; set; }
 
@@ -168,6 +116,6 @@ namespace RooftopHorizon.Models
 
 		public string OwnerScreenName { get; set; }
 
-		public IList<Command> SubCommands { get { return m_SubCommands; } }
+		public IList<Func<Tweet, Task>> SubCommands { get { return m_SubCommands; } }
 	}
 }

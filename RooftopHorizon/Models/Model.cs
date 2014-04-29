@@ -186,16 +186,12 @@ namespace RooftopHorizon.Models
 		public async Task RunCommand(string commandLine)
 		{
 			using (StringReader reader = new StringReader(commandLine))
-			using (Parser parser = new Parser(reader, this))
+			using (Parser2 parser = new Parser2(reader, this))
 			{
-				var commands = parser.Parse();
-				foreach (var item in commands)
-					item.StartTracking();
-				foreach (var item in commands)
-				{
-					await item.PerformAsync(this);
-					item.EndTracking();
-				}
+				var command = parser.Parse();
+				command.StartTracking();
+				await command.PerformAsync(this);
+				command.EndTracking();
 			}
 		}
 
@@ -203,15 +199,11 @@ namespace RooftopHorizon.Models
 		{
 			if (Tweeting.Text.StartsWith("@!") && Tweeting.InReplyToTweetId == null)
 			{
-				try
-				{
-					var temp = Tweeting.Text;
-					await RunCommand(Tweeting.Text.Remove(0, 2));
-					if (temp == Tweeting.Text)
-						Tweeting.Text = string.Empty;
-					return;
-				}
-				catch (ArgumentException) { }
+				var temp = Tweeting.Text;
+				await RunCommand(Tweeting.Text.Remove(0, 2));
+				if (temp == Tweeting.Text)
+					Tweeting.Text = string.Empty;
+				return;
 			}
 			if (UploadingMedia != null)
 				await Twitter.TweetAsync(Tweeting, Enumerable.Repeat(File.ReadAllBytes(UploadingMedia.LocalPath), 1));

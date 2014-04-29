@@ -271,6 +271,10 @@ namespace RooftopHorizon.ViewModels
 			{
 				await model.Tweet();
 			}
+			catch (ArgumentException ex)
+			{
+				Messenger.Raise(new Livet.Messaging.InformationMessage(ex.Message, "クエリの解析に失敗しました。", "ShowErrorMessage"));
+			}
 			catch (TwitterException ex)
 			{
 				var desc = ex.GetDescriptions().First();

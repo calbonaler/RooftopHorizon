@@ -25,8 +25,6 @@ namespace RooftopHorizon.Models
 			return types;
 		}
 
-		public object Value { get; private set; }
-
 		public abstract string StringifiedValue { get; }
 	}
 
@@ -55,7 +53,7 @@ namespace RooftopHorizon.Models
 
 	public sealed class AbsoluteIntegerToken : Token
 	{
-		public AbsoluteIntegerToken(int value, bool relative) { Value = value; }
+		public AbsoluteIntegerToken(int value) { Value = value; }
 
 		public int Value { get; private set; }
 
@@ -165,27 +163,12 @@ namespace RooftopHorizon.Models
 
 	public abstract class SymbolToken : Token { }
 
-	public sealed class SemicolonToken : SymbolToken
-	{
-		public override string StringifiedValue { get { return ";"; } }
-	}
-
 	public sealed class LeftParenthesisToken : SymbolToken
 	{
 		public override string StringifiedValue { get { return "("; } }
 	}
 
 	public sealed class RightParenthesisToken : SymbolToken
-	{
-		public override string StringifiedValue { get { return ")"; } }
-	}
-
-	public sealed class LeftBraceToken : SymbolToken
-	{
-		public override string StringifiedValue { get { return "{"; } }
-	}
-
-	public sealed class RightBraceToken : SymbolToken
 	{
 		public override string StringifiedValue { get { return ")"; } }
 	}

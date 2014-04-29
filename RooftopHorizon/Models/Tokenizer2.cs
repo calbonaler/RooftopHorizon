@@ -18,34 +18,23 @@ namespace RooftopHorizon.Models
 		string m_Line = null;
 		int m_Index = 0;
 
-		public T Expect<T>() where T : Token
-		{
-			if (Next is T)
-				return (T)Read();
-			throw new ArgumentException("unexpected toen");
-		}
-
-		public bool Accpet<T>() where T : Token
-		{
-			if (Next is T)
-			{
-				Read();
-				return true;
-			}
-			return false;
-		}
-
 		public Token Read()
 		{
+			var before = m_Next;
 			if (m_Reader == null)
 				throw new ObjectDisposedException(GetType().ToString());
 			if ((m_Line == null || m_Index >= m_Line.Length) && (m_Line = m_Reader.ReadLine()) == null)
-				return new EndOfStreamToken();
+			{
+				m_Next = new EndOfStreamToken();
+				return before;
+			}
 			while (m_Index < m_Line.Length && char.IsWhiteSpace(m_Line[m_Index]))
 				m_Index++;
 			if (m_Index >= m_Line.Length)
-				return new EndOfStreamToken();
-			var before = m_Next;
+			{
+				m_Next = new EndOfStreamToken();
+				return before;
+			}
 			Token token;
 			if ((token = ParseString()) != null) { }
 			else if ((token = ParseNumber()) != null) { }
@@ -68,9 +57,10 @@ namespace RooftopHorizon.Models
 				if (symbol != null)
 				{
 					m_Index = successfulIndex;
-					return symbol;
+					token = symbol;
 				}
-				return new UnknownToken(sb.ToString());
+				else
+					token = new UnknownToken(sb.ToString());
 			}
 			m_Next = token;
 			return before;
@@ -144,7 +134,10 @@ namespace RooftopHorizon.Models
 					else
 						break;
 				}
-				return new AbsoluteIntegerToken(negative ? -integer : integer, relative);
+				if (relative)
+					return new RelativeIntegerToken(negative ? -integer : integer);
+				else
+					return new AbsoluteIntegerToken(negative ? -integer : integer);
 			}
 			return null;
 		}
