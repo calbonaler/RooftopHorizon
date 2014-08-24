@@ -87,6 +87,8 @@ namespace RooftopHorizon.Query
 					parameter.Position = ((RelativeIntegerToken)m_Tokenizer.Read()).Value;
 					parameter.Relative = true;
 				}
+				else if (Accept<AllToken>())
+					parameter.Count = null;
 				else if (Accept<CountToken>())
 					parameter.Count = Expect<AbsoluteIntegerToken>().Value;
 				else if (Accept<OnToken>())
@@ -113,7 +115,7 @@ namespace RooftopHorizon.Query
 			if (commands != null)
 			{
 				foreach (var com in commands)
-					parameter.SubCommands.Add(com);
+					parameter.Executors.Add(com);
 			}
 			return new Command(parameter, m_Model);
 		}

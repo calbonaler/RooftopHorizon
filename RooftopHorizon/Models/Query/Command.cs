@@ -31,7 +31,7 @@ namespace RooftopHorizon.Query
 			DestinationTimeline = parameter.Timeline;
 			Count = parameter.Count;
 			Predicate = parameter.Predicate;
-			SubCommands = parameter.SubCommands.ToArray();
+			Executors = parameter.Executors.ToArray();
 		}
 
 		public TimelineWithSelectedIndex Timeline { get; private set; }
@@ -40,11 +40,11 @@ namespace RooftopHorizon.Query
 
 		public TimelineType DestinationTimeline { get; private set; }
 
-		public int Count { get; private set; }
+		public int? Count { get; private set; }
 
 		public Func<Tweet, bool> Predicate { get; private set; }
 
-		public IReadOnlyList<Func<Tweet, Task>> SubCommands { get; private set; }
+		public IReadOnlyList<Func<Tweet, Task>> Executors { get; private set; }
 		
 		public virtual void StartTracking() { if (Position != null) Timeline.Timeline.AddTracker(Position); }
 
@@ -53,9 +53,9 @@ namespace RooftopHorizon.Query
 		public async Task PerformAsync(Model model)
 		{
 			model.SelectedTimelineIndex = DestinationTimeline;
-			int count = Count;
+			int? count = Count;
 			int offset = 0;
-			while (count > 0 && Position.Value + offset < Timeline.Timeline.Count)
+			while ((count == null || count > 0) && Position.Value + offset < Timeline.Timeline.Count)
 			{
 				var tweet = Timeline.Timeline[Position.Value + offset];
 				if (tweet.RetweetSource != null)
@@ -63,46 +63,50 @@ namespace RooftopHorizon.Query
 				if (Predicate(tweet))
 				{
 					Timeline.SelectedIndex = Position.Value + offset;
-					foreach (var command in SubCommands)
+					foreach (var command in Executors)
 					{
 						try { await command(tweet); }
 						catch (TwitterException) { }
 					}
 				}
 				offset++;
-				count--;
+				if (count != null)
+					count--;
 			}
-			try
+			if (count != null)
 			{
-				while (count > 0)
+				try
 				{
-					await Timeline.Timeline.InsertBetweenAsync(-1, Timeline.Timeline.Count - 1, Math.Min(count, 200));
-					while (count > 0 && Position.Value + offset < Timeline.Timeline.Count)
+					while (count > 0)
 					{
-						var tweet = Timeline.Timeline[Position.Value + offset];
-						if (tweet.RetweetSource != null)
-							tweet = tweet.RetweetSource;
-						if (Predicate(tweet))
+						await Timeline.Timeline.InsertBetweenAsync(-1, Timeline.Timeline.Count - 1, Math.Min((int)count, 200));
+						while (count > 0 && Position.Value + offset < Timeline.Timeline.Count)
 						{
-							Timeline.SelectedIndex = Position.Value + offset;
-							foreach (var command in SubCommands)
+							var tweet = Timeline.Timeline[Position.Value + offset];
+							if (tweet.RetweetSource != null)
+								tweet = tweet.RetweetSource;
+							if (Predicate(tweet))
 							{
-								try { await command(tweet); }
-								catch (TwitterException) { }
+								Timeline.SelectedIndex = Position.Value + offset;
+								foreach (var command in Executors)
+								{
+									try { await command(tweet); }
+									catch (TwitterException) { }
+								}
 							}
+							offset++;
+							count--;
 						}
-						offset++;
-						count--;
 					}
 				}
+				catch (TwitterException) { }
 			}
-			catch (TwitterException) { }
 		}
 	}
 
 	public class CommandParameter
 	{
-		IList<Func<Tweet, Task>> m_SubCommands = new List<Func<Tweet, Task>>();
+		IList<Func<Tweet, Task>> m_Executors = new List<Func<Tweet, Task>>();
 
 		public int? Position { get; set; }
 
@@ -110,12 +114,12 @@ namespace RooftopHorizon.Query
 
 		public TimelineType Timeline { get; set; }
 
-		public int Count { get; set; }
+		public int? Count { get; set; }
 
 		public Func<Tweet, bool> Predicate { get; set; }
 
 		public string OwnerScreenName { get; set; }
 
-		public IList<Func<Tweet, Task>> SubCommands { get { return m_SubCommands; } }
+		public IList<Func<Tweet, Task>> Executors { get { return m_Executors; } }
 	}
 }

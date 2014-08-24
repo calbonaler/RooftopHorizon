@@ -96,6 +96,11 @@ namespace RooftopHorizon.Query
 		public override string StringifiedValue { get { return "re"; } }
 	}
 
+	public sealed class AllToken : KeywordToken
+	{
+		public override string StringifiedValue { get { return "all"; } }
+	}
+
 	public sealed class CountToken : KeywordToken
 	{
 		public override string StringifiedValue { get { return "count"; } }

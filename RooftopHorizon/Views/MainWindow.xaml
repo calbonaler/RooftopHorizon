@@ -100,7 +100,7 @@
 			<controls_wpf:SyntaxHighlightingTextBox Text="{Binding Tweeting.Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" MaxLength="140" TextWrapping="Wrap" AcceptsReturn="True">
 				<controls_wpf:SyntaxHighlightingTextBox.HighlightTokenizer>
 					<vm:TweetHighlightTokenizer>
-						<controls:WordHighlightDescriptor ForeColor="Blue" Words="sel, fav, unfav, rt, re, count, where, on, and, or, not, by, via, contains, matches, home, mentions, user" />
+						<controls:WordHighlightDescriptor ForeColor="Blue" Words="sel, fav, unfav, rt, re, all, count, where, on, and, or, not, by, via, contains, matches, home, mentions, user" />
 						<controls:EscapedRangeHighlightDescriptor ForeColor="#A31515" BoundaryCharacter="&quot;" EscapeCharacter="\" />
 					</vm:TweetHighlightTokenizer>
 				</controls_wpf:SyntaxHighlightingTextBox.HighlightTokenizer>
