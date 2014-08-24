@@ -155,17 +155,24 @@ namespace Saruna
 		{
 			return Tweet.FromXml(await request.GetXmlAsync(new TwitterRequestContent(HttpMethod.Post, "https://api.twitter.com/1.1/statuses/retweet/" + tweet.Id.ToString() + ".json")));
 		}
+		
+		public async Task<Tweet> UntweetAsync(ITweetIdentifier tweet)
+		{
+			return Tweet.FromXml(await request.GetXmlAsync(new TwitterRequestContent(HttpMethod.Post, "https://api.twitter.com/1.1/statuses/destroy/" + tweet.Id.ToString() + ".json")));
+		}
+
+		public async Task<IReadOnlyList<Tweet>> GetTweetsAsync(params ITweetIdentifier[] tweets)
+		{
+			var content = new TwitterRequestContent(tweets.Length > 10 ? HttpMethod.Post : HttpMethod.Get, "https://api.twitter.com/1.1/statuses/lookup.json");
+			content.SetParameter("id", string.Join(",", tweets.Select(x => x.Id)));
+			return (await request.GetXmlAsync(content)).Elements().Select(x => Tweet.FromXml(x)).ToArray();
+		}
 
 		public async Task<Tweet> GetTweetAsync(ITweetIdentifier tweet)
 		{
 			var content = new TwitterRequestContent(HttpMethod.Get, "https://api.twitter.com/1.1/statuses/show.json");
 			content.SetParameter("id", tweet.Id.ToString());
 			return Tweet.FromXml(await request.GetXmlAsync(content));
-		}
-
-		public async Task<Tweet> UntweetAsync(ITweetIdentifier tweet)
-		{
-			return Tweet.FromXml(await request.GetXmlAsync(new TwitterRequestContent(HttpMethod.Post, "https://api.twitter.com/1.1/statuses/destroy/" + tweet.Id.ToString() + ".json")));
 		}
 
 		public async Task<IReadOnlyList<Tweet>> GetRetweetsAsync(ITweetIdentifier tweet, int count)
@@ -176,6 +183,8 @@ namespace Saruna
 		}
 
 		#endregion
+
+		#region Search
 
 		public SearchTimeline SearchTweets(string query, DateTime until, GeometryCircle circle, CultureInfo language, CultureInfo locale, SearchResultType resultType)
 		{
@@ -193,6 +202,8 @@ namespace Saruna
 				content.SetParameter("until", ((DateTime)until).ToString("yyyy-MM-dd"));
 			return new SearchTimeline(request, content);
 		}
+
+		#endregion
 
 		#region Streaming
 
@@ -494,6 +505,8 @@ namespace Saruna
 			using (await request.GetResponseAsync(content)) { }
 		}
 
+		#region Block
+
 		public async Task<CursorNavigable<User>> GetBlockedUsersAsync(Cursor cursor)
 		{
 			var content = new TwitterRequestContent(HttpMethod.Get, "https://api.twitter.com/1.1/blocks/list.json");
@@ -522,13 +535,43 @@ namespace Saruna
 			return User.FromXml(await request.GetXmlAsync(content));
 		}
 
-		public async Task<IReadOnlyList<User>> LookupUsersAsync(params IUserIdentifier[] users)
+		#endregion
+
+		#region Mute
+
+		public async Task<CursorNavigable<User>> GetMutedUsersAsync(Cursor cursor)
 		{
-			TwitterRequestContent content = null;
-			if (users.Length > 20)
-				content = new TwitterRequestContent(HttpMethod.Post, "https://api.twitter.com/1.1/users/lookup.json");
-			else
-				content = new TwitterRequestContent(HttpMethod.Get, "https://api.twitter.com/1.1/users/lookup.json");
+			var content = new TwitterRequestContent(HttpMethod.Get, "https://api.twitter.com/1.1/mutes/users/list.json");
+			content.SetParameter("cursor", cursor.Value.ToString());
+			return CursorNavigable<User>.FromXml(await request.GetXmlAsync(content), "users", x => User.FromXml(x));
+		}
+
+		public async Task<CursorNavigable<IUserIdentifier>> GetMutedUserIdsAsync(Cursor cursor)
+		{
+			var content = new TwitterRequestContent(HttpMethod.Get, "https://api.twitter.com/1.1/mutes/users/ids.json");
+			content.SetParameter("cursor", cursor.Value.ToString());
+			return CursorNavigable<IUserIdentifier>.FromXml(await request.GetXmlAsync(content), "ids", x => Identifiers.CreateUser(x.Cast<long>()));
+		}
+
+		public async Task<User> MuteAsync(IUserIdentifier user)
+		{
+			var content = new TwitterRequestContent(HttpMethod.Post, "https://api.twitter.com/1.1/mutes/users/create.json");
+			SetUser(content, user);
+			return User.FromXml(await request.GetXmlAsync(content));
+		}
+
+		public async Task<User> UnmuteAsync(IUserIdentifier user)
+		{
+			var content = new TwitterRequestContent(HttpMethod.Post, "https://api.twitter.com/1.1/mutes/users/destroy.json");
+			SetUser(content, user);
+			return User.FromXml(await request.GetXmlAsync(content));
+		}
+
+		#endregion
+
+		public async Task<IReadOnlyList<User>> GetUsersAsync(params IUserIdentifier[] users)
+		{
+			var content = new TwitterRequestContent(users.Length > 10 ? HttpMethod.Post : HttpMethod.Get, "https://api.twitter.com/1.1/users/lookup.json");
 			SetUser(content, users);
 			return (await request.GetXmlAsync(content)).Elements().Select(x => User.FromXml(x)).ToArray();
 		}
@@ -986,23 +1029,23 @@ namespace Saruna
 
 		#region Help
 
-		public async Task<SystemConfiguration> GetSystemConfiguration()
+		public async Task<SystemConfiguration> GetSystemConfigurationAsync()
 		{
 			return SystemConfiguration.FromXml(await request.GetXmlAsync(new TwitterRequestContent(HttpMethod.Get, "https://api.twitter.com/1.1/help/configuration.json")));
 		}
 
-		public async Task<IReadOnlyList<CultureInfo>> GetSupportedLanguages()
+		public async Task<IReadOnlyList<CultureInfo>> GetSupportedLanguagesAsync()
 		{
 			return (await request.GetXmlAsync(new TwitterRequestContent(HttpMethod.Get, "https://api.twitter.com/1.1/help/languages.json")))
 				.Elements().Select(x => CultureInfo.GetCultureInfo(x.Element("code").Cast<string>())).ToArray();
 		}
 
-		public async Task<string> GetPrivacyPolicy()
+		public async Task<string> GetPrivacyPolicyAsync()
 		{
 			return (await request.GetXmlAsync(new TwitterRequestContent(HttpMethod.Get, "https://api.twitter.com/1.1/help/privacy.json"))).Element("privacy").Cast<string>();
 		}
 
-		public async Task<string> GetTermsOfService()
+		public async Task<string> GetTermsOfServiceAsync()
 		{
 			return (await request.GetXmlAsync(new TwitterRequestContent(HttpMethod.Get, "https://api.twitter.com/1.1/help/tos.json"))).Element("tos").Cast<string>();
 		}
