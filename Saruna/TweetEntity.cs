@@ -82,7 +82,7 @@ namespace Saruna
 
 	public class TweetUserMention : ITweetEntity
 	{
-		public IUserIdentifier Id { get; private set; }
+		public IUserIdentifiable Id { get; private set; }
 
 		public int Start { get; private set; }
 
@@ -128,7 +128,7 @@ namespace Saruna
 
 		public AvailableMediaSizes AvailableSizes { get; private set; }
 
-		public ITweetIdentifier SourceTweetId { get; private set; }
+		public ITweetIdentifiable SourceTweetId { get; private set; }
 
 		public string Type { get; private set; }
 

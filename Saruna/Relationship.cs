@@ -26,9 +26,9 @@ namespace Saruna
 			}
 		}
 
-		public IUserIdentifier SourceId { get; private set; }
+		public IUserIdentifiable SourceId { get; private set; }
 
-		public IUserIdentifier TargetId { get; private set; }
+		public IUserIdentifiable TargetId { get; private set; }
 
 		public bool IsFollowing { get; private set; }
 

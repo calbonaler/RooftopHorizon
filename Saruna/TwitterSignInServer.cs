@@ -47,7 +47,7 @@ namespace Saruna
 					string message = null;
 					if (context.Request.QueryString.AllKeys.Contains("oauth_verifier"))
 					{
-						OnSignInRequested(new SignInRequestedEventArgs(context.Request.QueryString["oauth_verifier"]));
+						OnSignInRequested(new SignInRequestedEventArgs(context.Request.QueryString["oauth_token"], context.Request.QueryString["oauth_verifier"]));
 						message = _succeededHtml;
 					}
 					else
@@ -71,8 +71,16 @@ namespace Saruna
 
 	public class SignInRequestedEventArgs : EventArgs
 	{
-		public SignInRequestedEventArgs(string verifier) { Verifier = verifier; }
+		public SignInRequestedEventArgs(string requestToken, string verifier)
+		{
+			_requestToken = requestToken;
+			Verifier = verifier;
+		}
+
+		string _requestToken;
 
 		public string Verifier { get; private set; }
+
+		public IAccount GetTemporaryAccount(IAccount temporary) { return new AccountStub(temporary.Consumer, new AuthorizationToken(_requestToken, temporary.Access.Secret)); }
 	}
 }

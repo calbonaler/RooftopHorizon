@@ -7,7 +7,7 @@ using System.Xml.Linq;
 
 namespace Saruna
 {
-	public class User : IUserIdentifier, INotifyPropertyChanged, IUpdateable<User>
+	public class User : IUserIdentifiable, INotifyPropertyChanged, IUpdateable<User>
 	{
 		#region IsContributorsEnabled
 		bool m_IsContributorsEnabled;

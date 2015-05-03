@@ -44,7 +44,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Identifiers.cs" />
-    <Compile Include="Infrastructures\TwitterRequestContent.cs" />
+    <Compile Include="Infrastructures\OAuthHandler.cs" />
+    <Compile Include="Infrastructures\RequestContent.cs" />
     <Compile Include="IUpdateable.cs" />
     <Compile Include="MiddleReference.cs" />
     <Compile Include="ProfileBanner.cs" />
@@ -53,15 +54,14 @@
     <Compile Include="Streams\StreamNoticeDistributor.cs" />
     <Compile Include="Streams\StreamNotices.cs" />
     <Compile Include="SystemConfiguration.cs" />
-    <Compile Include="TokenSecretPair.cs" />
+    <Compile Include="AuthorizationToken.cs" />
     <Compile Include="ConnectionEntry.cs" />
     <Compile Include="Point.cs" />
     <Compile Include="DeliveryDevice.cs" />
     <Compile Include="DirectMessage.cs" />
     <Compile Include="TweetEntity.cs" />
     <Compile Include="IMessage.cs" />
-    <Compile Include="Infrastructures\PercentEncoding.cs" />
-    <Compile Include="Infrastructures\TwitterRequest.cs" />
+    <Compile Include="Infrastructures\RequestSender.cs" />
     <Compile Include="CursorNavigables.cs" />
     <Compile Include="List.cs" />
     <Compile Include="Place.cs" />
@@ -83,7 +83,6 @@
     <Compile Include="Streams\TwitterStream.cs" />
     <Compile Include="Utils.cs" />
   </ItemGroup>
-  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

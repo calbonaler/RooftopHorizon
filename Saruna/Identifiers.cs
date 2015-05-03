@@ -8,18 +8,18 @@ namespace Saruna
 {
 	public static class Identifiers
 	{
-		internal static ITweetIdentifier CreateTweet(long? id) { return id == null ? null : new TweetIdentifier((long)id); }
-		internal static IDirectMessageIdentifier CreateDirectMessage(long? id) { return id == null ? null : new DirectMessageIdentifier((long)id); }
-		internal static IUserIdentifier CreateUser(string screenName, long? id)
+		internal static ITweetIdentifiable CreateTweet(long? id) { return id == null ? null : new TweetIdentifier((long)id); }
+		internal static IDirectMessageIdentifiable CreateDirectMessage(long? id) { return id == null ? null : new DirectMessageIdentifier((long)id); }
+		internal static IUserIdentifiable CreateUser(string screenName, long? id)
 		{
 			if (string.IsNullOrEmpty(screenName) || id == null)
 				return null;
 			else
 				return new UserIdentifier(screenName, (long)id);
 		}
-		internal static IUserIdentifier CreateUser(long? id) { return id == null ? null : new UserIdentifier((long)id); }
-		public static IUserIdentifier CreateUser(string screenName) { return string.IsNullOrEmpty(screenName) ? null : new UserIdentifier(screenName); }
-		public static IListIdentifier CreateList(IUserIdentifier user, string slug)
+		internal static IUserIdentifiable CreateUser(long? id) { return id == null ? null : new UserIdentifier((long)id); }
+		public static IUserIdentifiable CreateUser(string screenName) { return string.IsNullOrEmpty(screenName) ? null : new UserIdentifier(screenName); }
+		public static IListIdentifiable CreateList(IUserIdentifiable user, string slug)
 		{
 			if (user == null || string.IsNullOrEmpty(slug))
 				return null;
@@ -27,19 +27,19 @@ namespace Saruna
 				return new ListIdentifier(user, slug);
 		}
 
-		class TweetIdentifier : ITweetIdentifier
+		class TweetIdentifier : ITweetIdentifiable
 		{
 			public TweetIdentifier(long id) { Id = id; }
 			public long Id { get; private set; }
 		}
 
-		class DirectMessageIdentifier : IDirectMessageIdentifier
+		class DirectMessageIdentifier : IDirectMessageIdentifiable
 		{
 			public DirectMessageIdentifier(long id) { Id = id; }
 			public long Id { get; private set; }
 		}
 
-		class UserIdentifier : IUserIdentifier
+		class UserIdentifier : IUserIdentifiable
 		{
 			public UserIdentifier(string screenName)
 			{
@@ -63,14 +63,14 @@ namespace Saruna
 			public bool HasScreenName { get; private set; }
 		}
 
-		class ListIdentifier : IListIdentifier
+		class ListIdentifier : IListIdentifiable
 		{
-			public ListIdentifier(IUserIdentifier user, string slug)
+			public ListIdentifier(IUserIdentifiable user, string slug)
 			{
 				User = user;
 				Slug = slug;
 			}
-			public IUserIdentifier User { get; private set; }
+			public IUserIdentifiable User { get; private set; }
 			public string Slug { get; private set; }
 			public long Id { get { return 0; } }
 			public bool HasId { get { return false; } }
@@ -78,17 +78,17 @@ namespace Saruna
 		}
 	}
 
-	public interface ITweetIdentifier
+	public interface ITweetIdentifiable
 	{
 		long Id { get; }
 	}
 
-	public interface IDirectMessageIdentifier
+	public interface IDirectMessageIdentifiable
 	{
 		long Id { get; }
 	}
 
-	public interface IUserIdentifier
+	public interface IUserIdentifiable
 	{
 		string ScreenName { get; }
 		long Id { get; }
@@ -96,21 +96,21 @@ namespace Saruna
 		bool HasScreenName { get; }
 	}
 
-	public interface IListIdentifier
+	public interface IListIdentifiable
 	{
 		string Slug { get; }
-		IUserIdentifier User { get; }
+		IUserIdentifiable User { get; }
 		long Id { get; }
 		bool HasId { get; }
 		bool HasSlugAndUser { get; }
 	}
 
-	public interface ISavedSearchIdentifier
+	public interface ISavedSearchIdentifiable
 	{
 		long Id { get; }
 	}
 
-	public interface IPlaceIdentifier
+	public interface IPlaceIdentifiable
 	{
 		string Id { get; }
 	}

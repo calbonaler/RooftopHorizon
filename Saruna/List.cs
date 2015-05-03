@@ -5,7 +5,7 @@ using System.Xml.Linq;
 
 namespace Saruna
 {
-	public class List : IListIdentifier, INotifyPropertyChanged, IUpdateable<List>
+	public class List : IListIdentifiable, INotifyPropertyChanged, IUpdateable<List>
 	{
 		public static List FromXml(XElement element)
 		{
@@ -221,7 +221,7 @@ namespace Saruna
 		}
 		#endregion
 
-		IUserIdentifier IListIdentifier.User { get { return User; } }
+		IUserIdentifiable IListIdentifiable.User { get { return User; } }
 
 		public bool HasId { get { return true; } }
 

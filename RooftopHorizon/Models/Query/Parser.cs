@@ -64,10 +64,10 @@ namespace RooftopHorizon.Query
 
 		public Command Parse()
 		{
-			List<Func<Tweet, Task>> commands = null;
+			List<Func<Tweet, IAccount, Task>> commands = null;
 			var command = ParseCommandName();
 			if (command != null)
-				(commands ?? (commands = new List<Func<Tweet, Task>>())).Add(command);
+				(commands ?? (commands = new List<Func<Tweet, IAccount, Task>>())).Add(command);
 			while (Accept<AndToken>())
 			{
 				command = ParseCommandName();
@@ -120,16 +120,16 @@ namespace RooftopHorizon.Query
 			return new Command(parameter, m_Model);
 		}
 
-		Func<Tweet, Task> ParseCommandName()
+		Func<Tweet, IAccount, Task<Tweet>> ParseCommandName()
 		{
 			if (Accept<FavoriteToken>())
-				return m_Model.Twitter.FavoriteAsync;
+				return Tweets.FavoriteAsync;
 			if (Accept<UnfavoriteToken>())
-				return m_Model.Twitter.UnfavoriteAsync;
+				return Tweets.UnfavoriteAsync;
 			if (Accept<RetweetToken>())
-				return m_Model.Twitter.RetweetAsync;
+				return Tweets.RetweetAsync;
 			if (Accept<ReplyToken>())
-				return async x => { m_Model.SetInReplyTo(x); await Task.Delay(0); };
+				return (x, y) => { m_Model.SetInReplyTo(x); return Task.FromResult(x); };
 			Expect<SelectToken>();
 			return null;
 		}

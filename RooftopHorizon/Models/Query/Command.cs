@@ -18,7 +18,7 @@ namespace RooftopHorizon.Query
 			else if (parameter.Timeline == TimelineType.Mention)
 				Timeline = model.MentionsTimeline;
 			else if (parameter.Timeline == TimelineType.User)
-				Timeline = new TimelineWithSelectedIndex(model.Twitter.GetUserTimeline(Identifiers.CreateUser(parameter.OwnerScreenName)));
+				Timeline = new TimelineWithSelectedIndex(Identifiers.CreateUser(parameter.OwnerScreenName).GetTimeline(model.Twitter));
 			if (parameter.Position != null)
 			{
 				if (parameter.Relative)
@@ -44,7 +44,7 @@ namespace RooftopHorizon.Query
 
 		public Func<Tweet, bool> Predicate { get; private set; }
 
-		public IReadOnlyList<Func<Tweet, Task>> Executors { get; private set; }
+		public IReadOnlyList<Func<Tweet, IAccount, Task>> Executors { get; private set; }
 		
 		public virtual void StartTracking() { if (Position != null) Timeline.Timeline.AddTracker(Position); }
 
@@ -65,7 +65,7 @@ namespace RooftopHorizon.Query
 					Timeline.SelectedIndex = Position.Value + offset;
 					foreach (var command in Executors)
 					{
-						try { await command(tweet); }
+						try { await command(tweet, model.Twitter); }
 						catch (TwitterException) { }
 					}
 				}
@@ -90,7 +90,7 @@ namespace RooftopHorizon.Query
 								Timeline.SelectedIndex = Position.Value + offset;
 								foreach (var command in Executors)
 								{
-									try { await command(tweet); }
+									try { await command(tweet, model.Twitter); }
 									catch (TwitterException) { }
 								}
 							}
@@ -106,7 +106,7 @@ namespace RooftopHorizon.Query
 
 	public class CommandParameter
 	{
-		IList<Func<Tweet, Task>> m_Executors = new List<Func<Tweet, Task>>();
+		IList<Func<Tweet, IAccount, Task>> m_Executors = new List<Func<Tweet, IAccount, Task>>();
 
 		public int? Position { get; set; }
 
@@ -120,6 +120,6 @@ namespace RooftopHorizon.Query
 
 		public string OwnerScreenName { get; set; }
 
-		public IList<Func<Tweet, Task>> Executors { get { return m_Executors; } }
+		public IList<Func<Tweet, IAccount, Task>> Executors { get { return m_Executors; } }
 	}
 }

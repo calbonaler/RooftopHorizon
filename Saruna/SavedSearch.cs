@@ -4,7 +4,7 @@ using System.Xml.Linq;
 
 namespace Saruna
 {
-	public class SavedSearch : ISavedSearchIdentifier
+	public class SavedSearch : ISavedSearchIdentifiable
 	{
 		public static SavedSearch FromXml(XElement element)
 		{

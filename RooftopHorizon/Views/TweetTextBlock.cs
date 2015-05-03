@@ -56,7 +56,7 @@ namespace RooftopHorizon.Views
 					if ((mention = entity as TweetUserMention) != null)
 						link.NavigateUri = new Uri("https://twitter.com/" + mention.ScreenName);
 					else if ((hashtag = entity as TweetHashtag) != null)
-						link.NavigateUri = new Uri("https://twitter.com/search?q=" + Saruna.Infrastructures.PercentEncoding.Encode("#" + hashtag.Text));
+						link.NavigateUri = new Uri("https://twitter.com/search?q=" + Uri.EscapeDataString("#" + hashtag.Text));
 					try { link.Inlines.Add(tweet.Text.Substring(entity.Start, entity.End - entity.Start)); }
 					catch (ArgumentOutOfRangeException) { }
 				}

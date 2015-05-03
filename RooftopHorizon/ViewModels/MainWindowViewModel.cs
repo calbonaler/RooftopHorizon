@@ -109,7 +109,7 @@ namespace RooftopHorizon.ViewModels
 		{
 			try
 			{
-				await model.Twitter.FavoriteAsync(tweet);
+				await tweet.FavoriteAsync(model.Twitter);
 			}
 			catch (TwitterException)
 			{
@@ -123,7 +123,7 @@ namespace RooftopHorizon.ViewModels
 		{
 			try
 			{
-				await model.Twitter.RetweetAsync(tweet);
+				await tweet.RetweetAsync(model.Twitter);
 			}
 			catch (TwitterException)
 			{
@@ -218,8 +218,7 @@ namespace RooftopHorizon.ViewModels
 			}
 			catch (TwitterException ex)
 			{
-				var desc = ex.GetDescriptions().First();
-				Messenger.Raise(new Livet.Messaging.InformationMessage(desc.Code + ": " + desc.Message, "タイムラインの読み込みに失敗しました。", "ShowErrorMessage"));
+				Messenger.Raise(new Livet.Messaging.InformationMessage(ex.Descriptions[0].Code + ": " + ex.Descriptions[0].Message, "タイムラインの読み込みに失敗しました。", "ShowErrorMessage"));
 			}
 		}
 		#endregion
@@ -245,8 +244,7 @@ namespace RooftopHorizon.ViewModels
 			}
 			catch (TwitterException ex)
 			{
-				var desc = ex.GetDescriptions().First();
-				Messenger.Raise(new Livet.Messaging.InformationMessage(desc.Code + ": " + desc.Message, "タイムラインの読み込みに失敗しました。", "ShowErrorMessage"));
+				Messenger.Raise(new Livet.Messaging.InformationMessage(ex.Descriptions[0].Code + ": " + ex.Descriptions[0].Message, "タイムラインの読み込みに失敗しました。", "ShowErrorMessage"));
 			}
 		}
 		#endregion
@@ -276,8 +274,7 @@ namespace RooftopHorizon.ViewModels
 			}
 			catch (TwitterException ex)
 			{
-				var desc = ex.GetDescriptions().First();
-				Messenger.Raise(new Livet.Messaging.InformationMessage(desc.Code + ": " + desc.Message, "ツイートの送信に失敗しました", "ShowErrorMessage"));
+				Messenger.Raise(new Livet.Messaging.InformationMessage(ex.Descriptions[0].Code + ": " + ex.Descriptions[0].Message, "ツイートの送信に失敗しました", "ShowErrorMessage"));
 			}
 		}
 
@@ -304,8 +301,7 @@ namespace RooftopHorizon.ViewModels
 			}
 			catch (TwitterException ex)
 			{
-				var desc = ex.GetDescriptions().First();
-				Messenger.Raise(new Livet.Messaging.InformationMessage(desc.Code + ": " + desc.Message, "タイムラインの読み込みに失敗しました。", "ShowErrorMessage"));
+				Messenger.Raise(new Livet.Messaging.InformationMessage(ex.Descriptions[0].Code + ": " + ex.Descriptions[0].Message, "タイムラインの読み込みに失敗しました。", "ShowErrorMessage"));
 			}
 		}
 		#endregion

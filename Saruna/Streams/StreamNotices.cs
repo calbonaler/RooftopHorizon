@@ -16,9 +16,9 @@ namespace Saruna.Streams
 
 	public class TweetDeletionNotice : IStreamNotice
 	{
-		public ITweetIdentifier TweetId { get; private set; }
+		public ITweetIdentifiable TweetId { get; private set; }
 
-		public IUserIdentifier UserId { get; private set; }
+		public IUserIdentifiable UserId { get; private set; }
 
 		Tweet tweet;
 		public Tweet Tweet
@@ -50,9 +50,9 @@ namespace Saruna.Streams
 
 	public class DirectMessageDeletionNotice : IStreamNotice
 	{
-		public IDirectMessageIdentifier DirectMessageId { get; private set; }
+		public IDirectMessageIdentifiable DirectMessageId { get; private set; }
 
-		public IUserIdentifier UserId { get; private set; }
+		public IUserIdentifiable UserId { get; private set; }
 
 		public bool Assign(XElement element)
 		{
@@ -73,9 +73,9 @@ namespace Saruna.Streams
 
 	public class LocationDeletionNotice : IStreamNotice
 	{
-		public ITweetIdentifier UpToTweetId { get; private set; }
+		public ITweetIdentifiable UpToTweetId { get; private set; }
 
-		public IUserIdentifier UserId { get; private set; }
+		public IUserIdentifiable UserId { get; private set; }
 		
 		public bool Assign(XElement element)
 		{
@@ -108,9 +108,9 @@ namespace Saruna.Streams
 
 	public class TweetWithheldNotice : IStreamNotice
 	{
-		public ITweetIdentifier TweetId { get; private set; }
+		public ITweetIdentifiable TweetId { get; private set; }
 
-		public IUserIdentifier UserId { get; private set; }
+		public IUserIdentifiable UserId { get; private set; }
 
 		public IReadOnlyList<string> WithheldInCountries { get; private set; }
 
@@ -130,7 +130,7 @@ namespace Saruna.Streams
 
 	public class UserWithheldNotice : IStreamNotice
 	{
-		public IUserIdentifier UserId { get; private set; }
+		public IUserIdentifiable UserId { get; private set; }
 
 		public IReadOnlyList<string> WithheldInCountries { get; private set; }
 
@@ -211,7 +211,7 @@ namespace Saruna.Streams
 
 	public class FriendListNotice : IStreamNotice
 	{
-		public IReadOnlyList<IUserIdentifier> FriendIds { get; private set; }
+		public IReadOnlyList<IUserIdentifiable> FriendIds { get; private set; }
 
 		public bool Assign(XElement element)
 		{
@@ -307,7 +307,7 @@ namespace Saruna.Streams
 
 		public string Message { get; private set; }
 
-		public IUserIdentifier UserId { get; private set; }
+		public IUserIdentifiable UserId { get; private set; }
 
 		public bool Assign(XElement element)
 		{

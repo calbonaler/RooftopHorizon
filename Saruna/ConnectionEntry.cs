@@ -8,7 +8,7 @@ namespace Saruna
 	{
 		public string Name { get; private set; }
 
-		public IUserIdentifier Id { get; private set; }
+		public IUserIdentifiable Id { get; private set; }
 
 		public Connections Connection { get; private set; }
 

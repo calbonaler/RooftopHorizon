@@ -10,7 +10,7 @@ using HtmlAgilityPack;
 
 namespace Saruna
 {
-	public class Tweet : ITweetIdentifier, IMessage, INotifyPropertyChanged, IUpdateable<Tweet>
+	public class Tweet : ITweetIdentifiable, IMessage, INotifyPropertyChanged, IUpdateable<Tweet>
 	{
 		public static Tweet FromXml(XElement element)
 		{
@@ -247,8 +247,8 @@ namespace Saruna
 		#endregion
 
 		#region InReplyToTweetId
-		ITweetIdentifier m_InReplyToTweetId;
-		public ITweetIdentifier InReplyToTweetId
+		ITweetIdentifiable m_InReplyToTweetId;
+		public ITweetIdentifiable InReplyToTweetId
 		{
 			get { return m_InReplyToTweetId; }
 			set
@@ -264,8 +264,8 @@ namespace Saruna
 		#endregion
 
 		#region InReplyToUserId
-		IUserIdentifier m_InReplyToUserId;
-		public IUserIdentifier InReplyToUserId
+		IUserIdentifiable m_InReplyToUserId;
+		public IUserIdentifiable InReplyToUserId
 		{
 			get { return m_InReplyToUserId; }
 			set
@@ -509,13 +509,13 @@ namespace Saruna
 				PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
 		}
 
-		public async Task UpdateInReplyToTweetAsync(Twitter twitter)
+		public async Task UpdateInReplyToTweetAsync(IAccount authData)
 		{
 			try
 			{
 				if (InReplyToTweetId != null && m_InReplyToTweet == null)
 				{
-					m_InReplyToTweet = await twitter.GetTweetAsync(InReplyToTweetId);
+					m_InReplyToTweet = await InReplyToTweetId.ResolveAsync(authData);
 					if (m_InReplyToTweet != null)
 						OnPropertyChanged("InReplyToTweet");
 				}
@@ -568,7 +568,7 @@ namespace Saruna
 			return res;
 		}
 
-		public IUserIdentifier Id { get; private set; }
+		public IUserIdentifiable Id { get; private set; }
 
 		public override string ToString() { return Id.ScreenName; }
 	}

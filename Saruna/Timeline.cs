@@ -9,18 +9,18 @@ namespace Saruna
 {
 	public class Timeline<T> : ITimeline<T> where T : IMessage
 	{
-		public Timeline(Infrastructures.TwitterRequest request, Infrastructures.TwitterRequestContent content)
+		public Timeline(IAccount authData, Infrastructures.RequestContent content)
 		{
-			RefreshRequest = request;
+			AuthorizationData = authData;
 			RefreshContent = content;
 		}
 
-		ObservableCollection<T> internalCollection = new ObservableCollection<T>();
+		OverThreadObservableCollection<T> internalCollection = new OverThreadObservableCollection<T>();
 		List<PositionTracker> trackers = new List<PositionTracker>();
 
-		protected Infrastructures.TwitterRequest RefreshRequest { get; private set; }
+		protected IAccount AuthorizationData { get; private set; }
 
-		protected Infrastructures.TwitterRequestContent RefreshContent { get; private set; }
+		protected Infrastructures.RequestContent RefreshContent { get; private set; }
 
 		public void AddTracker(PositionTracker tracker) { trackers.Add(tracker); }
 
@@ -35,9 +35,6 @@ namespace Saruna
 
 		public async Task InsertBetweenAsync(int newerThan, int olderThan, int count)
 		{
-			RefreshContent.RemoveParameter("count");
-			RefreshContent.RemoveParameter("since_id");
-			RefreshContent.RemoveParameter("max_id");
 			if (newerThan < 0 || newerThan >= Count)
 				newerThan = Count;
 			if (olderThan < 0 || olderThan >= Count)
@@ -46,11 +43,17 @@ namespace Saruna
 				throw new ArgumentException();
 			if (newerThan < Count)
 				RefreshContent.SetParameter("since_id", this[newerThan].Id.ToString());
+			else
+				RefreshContent.RemoveParameter("since_id");
 			if (olderThan > -1)
 				RefreshContent.SetParameter("max_id", (this[olderThan].Id - 1).ToString());
+			else
+				RefreshContent.RemoveParameter("max_id");
 			if (count > 0)
 				RefreshContent.SetParameter("count", count.ToString());
-			var items = await GetResultsAsync();
+			else
+				RefreshContent.RemoveParameter("count");
+			var items = await GetResultsAsync().ConfigureAwait(false);
 			for (int i = newerThan - 1; i > olderThan; i--)
 			{
 				internalCollection.RemoveAt(i);
@@ -68,9 +71,9 @@ namespace Saruna
 		protected virtual async Task<IReadOnlyList<T>> GetResultsAsync()
 		{
 			if (typeof(T) == typeof(Tweet))
-				return (IReadOnlyList<T>)(await RefreshRequest.GetXmlAsync(RefreshContent)).Elements().Select(x => Tweet.FromXml(x)).ToList();
+				return (IReadOnlyList<T>)(await Saruna.Infrastructures.RequestSender.GetXmlAsync(AuthorizationData, RefreshContent).ConfigureAwait(false)).Elements().Select(x => Tweet.FromXml(x)).ToList();
 			else if (typeof(T) == typeof(DirectMessage))
-				return (IReadOnlyList<T>)(await RefreshRequest.GetXmlAsync(RefreshContent)).Elements().Select(x => DirectMessage.FromXml(x)).ToList();
+				return (IReadOnlyList<T>)(await Saruna.Infrastructures.RequestSender.GetXmlAsync(AuthorizationData, RefreshContent).ConfigureAwait(false)).Elements().Select(x => DirectMessage.FromXml(x)).ToList();
 			else
 				throw new InvalidOperationException();
 		}
@@ -118,8 +121,8 @@ namespace Saruna
 
 		public async Task InsertBetweenAsync(int newerThan, int olderThan, int count)
 		{
-			await m_Timeline1.InsertBetweenAsync(newerThan, olderThan, count);
-			await m_Timeline2.InsertBetweenAsync(newerThan, olderThan, count);
+			await m_Timeline1.InsertBetweenAsync(newerThan, olderThan, count).ConfigureAwait(false);
+			await m_Timeline2.InsertBetweenAsync(newerThan, olderThan, count).ConfigureAwait(false);
 		}
 
 		public T this[int index] { get { return m_MasterTimeline.ElementAt(index); } }
@@ -157,6 +160,23 @@ namespace Saruna
 				Value--;
 			if (removedIndex == Value)
 				Value = -1;
+		}
+	}
+
+	public class OverThreadObservableCollection<T> : ObservableCollection<T>
+	{
+		public OverThreadObservableCollection() { EventContext = System.Threading.SynchronizationContext.Current; }
+
+		public System.Threading.SynchronizationContext EventContext { get; set; }
+
+		protected override void OnCollectionChanged(NotifyCollectionChangedEventArgs e)
+		{
+			if (EventContext == System.Threading.SynchronizationContext.Current)
+				base.OnCollectionChanged(e);
+			else if (EventContext != null)
+				EventContext.Post(_ => base.OnCollectionChanged(e), null);
+			else
+				base.OnCollectionChanged(e); // マーシャリングできないので仕方なくそのまま実行
 		}
 	}
 }

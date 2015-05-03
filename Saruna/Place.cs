@@ -6,7 +6,7 @@ using System.Xml.Linq;
 
 namespace Saruna
 {
-	public class Place : IPlaceIdentifier
+	public class Place : IPlaceIdentifiable
 	{
 		public BoundingBox BoundingBox { get; private set; }
 

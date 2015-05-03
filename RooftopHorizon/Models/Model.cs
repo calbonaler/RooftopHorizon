@@ -18,9 +18,12 @@ namespace RooftopHorizon
 			Twitter = new Twitter();
 			var root = System.Xml.Linq.XDocument.Load("DefaultKeys.xml").Root;
 			// 下記はコンシューマーキーです。変更不要
-			Twitter.ConsumerKey = new TokenSecretPair((string)root.Element("ConsumerKey"), (string)root.Element("ConsumerSecret"));
+			Twitter.Consumer = new AuthorizationToken((string)root.Element("ConsumerKey"), (string)root.Element("ConsumerSecret"));
 			// 下記はアクセストークンです。異なるユーザーをデフォルトで使用する場合は変更してください。
-			Twitter.AccessToken = new TokenSecretPair((string)root.Element("AccessToken"), (string)root.Element("AccessTokenSecret"));
+			Twitter.Access = new AuthorizationToken((string)root.Element("AccessToken"), (string)root.Element("AccessTokenSecret"));
+			var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+			Saruna.Infrastructures.RequestSender.ProductName = GetAttribute<System.Reflection.AssemblyProductAttribute>(assembly).Product;
+			Saruna.Infrastructures.RequestSender.ProductVersion = assembly.GetName().Version;
 			Twitter.UserStream.MessageReceived += UserStream_MessageReceived;
 			StreamNotices = new ObservableCollection<Saruna.Streams.IStreamNotice>();
 			DirectMessageTimeline = new CompositeTimeline<DirectMessage>(
@@ -32,6 +35,8 @@ namespace RooftopHorizon
 			MentionsTimeline = new TimelineWithSelectedIndex(Twitter.MentionsTimeline);
 			Tweeting = new Tweet();
 		}
+
+		static T GetAttribute<T>(System.Reflection.Assembly assembly) where T : Attribute { return (T)Attribute.GetCustomAttribute(assembly, typeof(T)); }
 
 		TwitterSignInServer signinServer;
 
@@ -165,13 +170,14 @@ namespace RooftopHorizon
 
 		public async Task SignInWithTwitter()
 		{
-			await Twitter.ApplyRequestTokenAsync("http://localhost:8000/rooftop-horizon/sign-in");
+			var account = await Authentication.GetTemporaryAccountAsync(Twitter.Consumer, "http://localhost:8000/rooftop-horizon/sign-in");
 			if (signinServer == null)
 			{
 				signinServer = new TwitterSignInServer();
 				signinServer.SignInRequested += async (s, ev) =>
 				{
-					await Twitter.ApplyAccessTokenAsync(ev.Verifier);
+					var trueAccount = await Authentication.GetPersistentAccountAsync(ev.GetTemporaryAccount(account), ev.Verifier);
+					Twitter.Access = trueAccount.Access;
 					AuthenticatingUser = await Twitter.VerifyCredentialsAsync();
 					System.Windows.Input.CommandManager.InvalidateRequerySuggested();
 				};
@@ -181,7 +187,7 @@ namespace RooftopHorizon
 					"<html><head><title>Rooftop Horizon</title></head><body><h2>認証できませんでした</h2>認証をやり直すにはRooftopHorizonを再起動してください。</body></html>"
 				);
 			}
-			System.Diagnostics.Process.Start(Twitter.CreateSignInAuthorizationUrl(Twitter.AccessToken));
+			System.Diagnostics.Process.Start(Authentication.CreateSignInAuthenticationUrl(account.Access));
 		}
 
 		public async Task RunCommand(string commandLine)
@@ -206,10 +212,12 @@ namespace RooftopHorizon
 					Tweeting.Text = string.Empty;
 				return;
 			}
+#if DEPRECATED
 			if (UploadingMedia != null)
 				await Twitter.TweetAsync(Tweeting, Enumerable.Repeat(File.ReadAllBytes(UploadingMedia.LocalPath), 1));
 			else
-				await Twitter.TweetAsync(Tweeting);
+#endif
+				await Tweeting.TweetAsync(Twitter);
 			Tweeting.Text = string.Empty;
 			Tweeting.InReplyToTweetId = null;
 			Tweeting.InReplyToUserId = null;

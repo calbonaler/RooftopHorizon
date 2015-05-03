@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Runtime.Serialization.Json;
 using System.Text;
@@ -10,10 +11,10 @@ namespace Saruna.Streams
 {
 	public class TwitterStream
 	{
-		public TwitterStream(TwitterRequest request, TwitterRequestContent content)
+		public TwitterStream(IAccount authData, RequestContent content)
 		{
 			context = SynchronizationContext.Current;
-			refreshRequest = request;
+			_authData = authData;
 			refreshContent = content;
 			distributor = new StreamNoticeDistributor();
 			distributor.NoticeTypes.Add(typeof(TweetDeletionNotice));
@@ -32,8 +33,8 @@ namespace Saruna.Streams
 
 		volatile bool connected = false;
 		SynchronizationContext context;
-		TwitterRequest refreshRequest;
-		TwitterRequestContent refreshContent;
+		IAccount _authData;
+		RequestContent refreshContent;
 		StreamNoticeDistributor distributor;
 
 		public event EventHandler<MessageReceivedEventArgs> MessageReceived;
@@ -43,8 +44,8 @@ namespace Saruna.Streams
 			if (connected)
 				return;
 			connected = true;
-			var response = await refreshRequest.GetResponseAsync(refreshContent);
-			var stream = await response.Content.ReadAsStreamAsync();
+			var response = await RequestSender.GetResponseAsync(_authData, refreshContent, System.Net.Http.HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
+			var stream = await response.Content.Content.ReadAsStreamAsync().ConfigureAwait(false);
 			new Action<IDisposable, Stream>(MainLoop).BeginInvoke(response, stream, null, null);
 		}
 
@@ -55,14 +56,20 @@ namespace Saruna.Streams
 		void MainLoop(IDisposable response, Stream stream)
 		{
 			using (response)
-			using (var streamReader = new StreamReader(stream, Encoding.UTF8))
 			{
-				string s;
-				while ((s = streamReader.ReadLine()) != null && connected)
+				List<byte> bytes = new List<byte>();
+				int b;
+				while ((b = stream.ReadByte()) >= 0 && connected)
 				{
-					if (string.IsNullOrEmpty(s) || MessageReceived == null)
+					if (b != '\r' && b != '\n')
+					{
+						bytes.Add((byte)b);
 						continue;
-					using (var reader = JsonReaderWriterFactory.CreateJsonReader(Encoding.UTF8.GetBytes(s), new System.Xml.XmlDictionaryReaderQuotas()))
+					}
+					if (bytes.Count <= 0 || MessageReceived == null)
+						continue;
+					Console.WriteLine(Encoding.UTF8.GetString(bytes.ToArray()));
+					using (var reader = JsonReaderWriterFactory.CreateJsonReader(bytes.ToArray(), new System.Xml.XmlDictionaryReaderQuotas()))
 					{
 						var xml = XElement.Load(reader);
 						var directMessage = xml.Element("direct_message");
@@ -79,6 +86,7 @@ namespace Saruna.Streams
 						);
 						Thread.Sleep(0);
 					}
+					bytes.Clear();
 				}
 				connected = false;
 			}

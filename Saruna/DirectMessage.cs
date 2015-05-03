@@ -5,7 +5,7 @@ using System.Xml.Linq;
 
 namespace Saruna
 {
-	public class DirectMessage : IDirectMessageIdentifier, INotifyPropertyChanged, IMessage, IUpdateable<DirectMessage>
+	public class DirectMessage : IDirectMessageIdentifiable, INotifyPropertyChanged, IMessage, IUpdateable<DirectMessage>
 	{
 		public static DirectMessage FromXml(XElement element)
 		{
@@ -116,7 +116,7 @@ namespace Saruna
 			}
 		}
 		#endregion
-		
+
 		User IMessage.User { get { return Sender; } }
 
 		public override string ToString() { return Text; }
